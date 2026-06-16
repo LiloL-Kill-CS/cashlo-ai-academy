@@ -1,0 +1,521 @@
+/* ===========================================================
+   Cashlo AI Academy — app engine
+   =========================================================== */
+
+const LS_KEY = "cashlo_ai_academy_v1";
+const GOAL = { small: 1, medium: 2, hard: 3 };
+const HABIT_LABEL = {
+  small: { tag: "Small", t: "🌱 Tiny win", d: "1 lesson today (~6 min). Atomic Habits: start so small you can't say no." },
+  medium: { tag: "Medium", t: "🔥 Steady", d: "2 lessons today (~15 min). The habit is forming." },
+  hard: { tag: "Hard", t: "⚡ Deep work", d: "3 lessons today (~25 min). For days you feel strong." }
+};
+
+/* ---------- date helpers ---------- */
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function yesterdayStr() {
+  const d = new Date(); d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/* ---------- state ---------- */
+function defaultState() {
+  return { completed: [], xp: 0, habit: "small", roadmapDone: [],
+    streak: { count: 0, longest: 0, lastCredit: null },
+    daily: { date: todayStr(), lessons: 0 } };
+}
+let state = loadState();
+
+function loadState() {
+  let s;
+  try { s = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { s = null; }
+  if (!s) s = defaultState();
+  if (!s.daily || s.daily.date !== todayStr()) s.daily = { date: todayStr(), lessons: 0 };
+  if (!s.streak) s.streak = { count: 0, longest: 0, lastCredit: null };
+  // break the streak if last credit wasn't today or yesterday
+  if (s.streak.lastCredit !== todayStr() && s.streak.lastCredit !== yesterdayStr()) s.streak.count = 0;
+  if (!Array.isArray(s.completed)) s.completed = [];
+  if (!Array.isArray(s.roadmapDone)) s.roadmapDone = [];
+  if (typeof s.xp !== "number") s.xp = 0;
+  if (!s.habit) s.habit = "small";
+  return s;
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+/* ---------- lookups ---------- */
+function allLessons(level) { return level.chapters.flatMap(c => c.lessons); }
+function levelComplete(level) { return allLessons(level).every(l => state.completed.includes(l.id)); }
+function isLevelLocked(level) {
+  if (!level.lockedUntil) return false;
+  const prereq = CURRICULUM.find(L => L.id === level.lockedUntil);
+  return prereq ? !levelComplete(prereq) : false;
+}
+function chapterProgress(chap) {
+  const done = chap.lessons.filter(l => state.completed.includes(l.id)).length;
+  return { done, total: chap.lessons.length };
+}
+function findLesson(id) {
+  for (const L of CURRICULUM) for (const c of L.chapters) {
+    const les = c.lessons.find(x => x.id === id);
+    if (les) return { level: L, chap: c, lesson: les };
+  }
+  return null;
+}
+
+/* ---------- top bar ---------- */
+function renderTopbar() {
+  document.getElementById("streakVal").textContent = state.streak.count;
+  document.getElementById("xpVal").textContent = state.xp;
+}
+
+/* ---------- screens ---------- */
+const screens = {};
+function show(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------- HOME ---------- */
+function renderHome() {
+  const goal = GOAL[state.habit];
+  const todayDone = Math.min(state.daily.lessons, goal);
+  const pct = Math.round((todayDone / goal) * 100);
+
+  let html = `
+    <div class="hero">
+      <div class="eyebrow">Your coffee shop, your classroom</div>
+      <h1>Learn AI from the ground up</h1>
+      <p>Every idea is taught through Cashlo — building, step by step, toward your self-improving cash-flow forecaster and a Sinta&nbsp;4 paper.</p>
+    </div>
+
+    <div class="habit">
+      <h3>🎯 Today's habit ${state.daily.lessons >= goal ? "— done! 🎉" : ""}</h3>
+      <div class="hint">James Clear's rule: start so small you can't say no. Scale up only when it sticks.</div>
+      <div class="habit-row">
+        ${["small","medium","hard"].map(k => `
+          <button class="habit-opt ${state.habit===k?"active":""}" data-habit="${k}">
+            <span class="tag">${HABIT_LABEL[k].tag}</span>
+            <div class="t">${HABIT_LABEL[k].t}</div>
+            <div class="d">${HABIT_LABEL[k].d}</div>
+          </button>`).join("")}
+      </div>
+      <div class="habit-progress">
+        <div class="todaybar"><div style="width:${pct}%"></div></div>
+        <div class="habit-note">${todayDone} / ${goal} lessons today · 🔥 ${state.streak.count}-day streak · longest ${state.streak.longest} · ${state.xp} XP</div>
+      </div>
+    </div>
+
+    <div class="section-title">Your journey</div>
+    <div class="levels">`;
+
+  for (const level of CURRICULUM) {
+    const locked = isLevelLocked(level);
+    const lessonsDone = allLessons(level).filter(l => state.completed.includes(l.id)).length;
+    const lessonsTotal = allLessons(level).length;
+    html += `
+      <div class="level">
+        <div class="level-head">
+          <div class="level-badge" style="background:${level.color}">${level.emoji}</div>
+          <div>
+            <h2>${level.title}</h2>
+            <div class="sub">${level.subtitle}</div>
+          </div>
+          <div class="lock">${locked ? `🔒 Finish ${level.lockedUntil}` : `${lessonsDone}/${lessonsTotal} lessons`}</div>
+        </div>
+        <div class="chapters">
+          ${level.chapters.map(chap => {
+            const p = chapterProgress(chap);
+            const cpct = Math.round((p.done / p.total) * 100);
+            const full = p.done === p.total && p.total > 0;
+            return `
+              <button class="chap ${locked ? "locked":""}" data-level="${level.id}" data-chap="${chap.id}" ${locked?"disabled":""}>
+                ${full ? `<span class="done-pill">✓ done</span>` : ""}
+                <div class="emoji">${chap.emoji}</div>
+                <div class="ctitle">${chap.title}</div>
+                <div class="csum">${chap.summary}</div>
+                <div class="cbar"><div style="width:${cpct}%"></div></div>
+                <div class="cmeta"><span>${p.done}/${p.total} lessons</span><span>${cpct}%</span></div>
+              </button>`;
+          }).join("")}
+        </div>
+      </div>`;
+  }
+  html += `</div>`;
+  screens.home.innerHTML = html;
+
+  screens.home.querySelectorAll("[data-habit]").forEach(b =>
+    b.addEventListener("click", () => { state.habit = b.dataset.habit; save(); renderHome(); }));
+  screens.home.querySelectorAll(".chap:not(.locked)").forEach(b =>
+    b.addEventListener("click", () => openChapter(b.dataset.level, b.dataset.chap)));
+
+  renderTopbar();
+}
+
+/* ---------- CHAPTER (lesson list) ---------- */
+let currentChapter = null;
+function openChapter(levelId, chapId) {
+  const level = CURRICULUM.find(L => L.id === levelId);
+  const chap = level.chapters.find(c => c.id === chapId);
+  currentChapter = { level, chap };
+
+  screens.chapter.innerHTML = `
+    <div class="lesson-top">
+      <button class="btn-back" id="chapBack">← Home</button>
+      <div class="step-count">${chap.emoji} ${chap.title}</div>
+    </div>
+    <div class="lesson-card">
+      <div class="kicker">${level.title}</div>
+      <h2>${chap.title}</h2>
+      <p class="block-text" style="margin:8px 0 18px;color:var(--ink-soft)">${chap.summary}</p>
+      <div style="display:grid;gap:12px">
+        ${chap.lessons.map((l, i) => {
+          const done = state.completed.includes(l.id);
+          return `
+            <button class="habit-opt" data-lesson="${l.id}" style="display:flex;align-items:center;gap:14px">
+              <div style="width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:#fff;background:${done?"var(--teal)":"var(--primary)"}">${done?"✓":i+1}</div>
+              <div style="flex:1">
+                <div class="t" style="margin:0">${l.title}</div>
+                <div class="d">~${l.minutes} min ${done?"· completed":""}</div>
+              </div>
+              <span style="font-weight:800;color:var(--primary)">${done?"Review":"Start"} →</span>
+            </button>`;
+        }).join("")}
+      </div>
+    </div>`;
+
+  document.getElementById("chapBack").addEventListener("click", () => { renderHome(); show("home"); });
+  screens.chapter.querySelectorAll("[data-lesson]").forEach(b =>
+    b.addEventListener("click", () => openLesson(b.dataset.lesson)));
+  show("chapter");
+}
+
+/* ---------- LESSON (step through blocks) ---------- */
+let lessonCtx = null; // { lesson, steps, idx, answered:Set }
+
+function buildSteps(blocks) {
+  // merge consecutive text/callout blocks into one reading step; quiz & interactive stand alone
+  const steps = []; let buffer = [];
+  const flush = () => { if (buffer.length) { steps.push({ kind: "read", blocks: buffer }); buffer = []; } };
+  for (const b of blocks) {
+    if (b.type === "quiz") { flush(); steps.push({ kind: "quiz", block: b }); }
+    else if (b.type === "interactive") { flush(); steps.push({ kind: "interactive", block: b }); }
+    else buffer.push(b);
+  }
+  flush();
+  return steps;
+}
+
+function openLesson(lessonId) {
+  const ctx = findLesson(lessonId);
+  lessonCtx = { ...ctx, steps: buildSteps(ctx.lesson.blocks), idx: 0, quizDone: {} };
+  renderLessonStep();
+  show("lesson");
+}
+
+function renderBlockHTML(b) {
+  if (b.type === "text") return `<div class="block-text">${b.html}</div>`;
+  if (b.type === "callout") return `<div class="callout ${b.variant}">${b.html}</div>`;
+  return "";
+}
+
+function renderLessonStep() {
+  const { lesson, steps, idx, level, chap } = lessonCtx;
+  const step = steps[idx];
+  const pct = Math.round(((idx) / steps.length) * 100);
+  const last = idx === steps.length - 1;
+
+  let body = "";
+  if (step.kind === "read") {
+    body = `<div class="kicker">${chap.title}</div><h2>${lesson.title}</h2>${step.blocks.map(renderBlockHTML).join("")}`;
+  } else if (step.kind === "interactive") {
+    body = `<div class="kicker">${chap.title}</div><h2>${lesson.title}</h2><div id="widgetHost"></div>`;
+  } else if (step.kind === "quiz") {
+    const q = step.block;
+    body = `<div class="kicker">Quick check</div>
+      <div class="quiz">
+        <div class="q">${q.q}</div>
+        <div class="quiz-grid" id="quizGrid">
+          ${q.options.map((opt, i) => {
+            const styles = ["red","blue","yellow","green"]; const shapes = ["▲","◆","●","■"];
+            return `<button class="q-tile ${styles[i]}" data-i="${i}"><span class="shape">${shapes[i]}</span><span>${opt}</span></button>`;
+          }).join("")}
+        </div>
+        <div class="quiz-feedback" id="quizFb"></div>
+      </div>`;
+  }
+
+  const answeredThisQuiz = step.kind === "quiz" ? lessonCtx.quizDone[idx] : true;
+
+  screens.lesson.innerHTML = `
+    <div class="lesson-top">
+      <button class="btn-back" id="lessonBack">← ${chap.title}</button>
+      <div class="lesson-progress"><div style="width:${pct}%"></div></div>
+      <div class="step-count">${idx + 1}/${steps.length}</div>
+    </div>
+    <div class="lesson-card">${body}</div>
+    <div class="lesson-nav">
+      <button class="btn btn-ghost" id="prevBtn" ${idx === 0 ? "style='visibility:hidden'" : ""}>← Back</button>
+      <button class="btn btn-primary" id="nextBtn" ${answeredThisQuiz ? "" : "disabled"}>${last ? "Finish lesson 🎉" : "Continue →"}</button>
+    </div>`;
+
+  document.getElementById("lessonBack").addEventListener("click", () => openChapter(level.id, chap.id));
+  document.getElementById("prevBtn").addEventListener("click", () => { lessonCtx.idx--; renderLessonStep(); });
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    if (last) finishLesson();
+    else { lessonCtx.idx++; renderLessonStep(); }
+  });
+
+  if (step.kind === "interactive" && step.block.widget === "fitLine") initFitLine();
+  if (step.kind === "quiz") wireQuiz(step.block);
+}
+
+function wireQuiz(q) {
+  const grid = document.getElementById("quizGrid");
+  const fb = document.getElementById("quizFb");
+  const tiles = [...grid.querySelectorAll(".q-tile")];
+  const alreadyAnswered = lessonCtx.quizDone[lessonCtx.idx];
+
+  if (alreadyAnswered) {
+    tiles.forEach((t, i) => { t.disabled = true; if (i === q.answer) t.classList.add("reveal"); });
+    fb.className = "quiz-feedback ok show";
+    fb.innerHTML = `<b>✓ Correct:</b> ${q.explain}`;
+    return;
+  }
+
+  tiles.forEach(tile => tile.addEventListener("click", () => {
+    const pick = +tile.dataset.i;
+    tiles.forEach(t => t.disabled = true);
+    if (pick === q.answer) {
+      tile.classList.add("correct");
+      fb.className = "quiz-feedback ok show";
+      fb.innerHTML = `<b>✓ Correct!</b> ${q.explain}`;
+      state.xp += 10; save(); renderTopbar();
+      burstConfetti(18);
+    } else {
+      tile.classList.add("wrong");
+      tiles[q.answer].classList.add("reveal");
+      fb.className = "quiz-feedback no show";
+      fb.innerHTML = `<b>Not quite.</b> ${q.explain}`;
+    }
+    lessonCtx.quizDone[lessonCtx.idx] = true;
+    document.getElementById("nextBtn").disabled = false;
+  }));
+}
+
+/* ---------- finishing a lesson ---------- */
+function finishLesson() {
+  const id = lessonCtx.lesson.id;
+  const firstTime = !state.completed.includes(id);
+  if (firstTime) { state.completed.push(id); state.xp += 20; }
+  // daily + streak
+  state.daily.lessons++;
+  const goal = GOAL[state.habit];
+  let streakUp = false;
+  if (state.daily.lessons >= goal && state.streak.lastCredit !== todayStr()) {
+    state.streak.count = (state.streak.lastCredit === yesterdayStr()) ? state.streak.count + 1 : 1;
+    state.streak.lastCredit = todayStr();
+    state.streak.longest = Math.max(state.streak.longest, state.streak.count);
+    streakUp = true;
+  }
+  save(); renderTopbar();
+  celebrate(firstTime, streakUp);
+}
+
+/* ---------- celebration ---------- */
+function celebrate(firstTime, streakUp) {
+  const el = document.getElementById("celebrate");
+  const goalMet = state.daily.lessons >= GOAL[state.habit];
+  document.getElementById("celBig").textContent = streakUp ? "🔥" : "🎉";
+  document.getElementById("celTitle").textContent = streakUp ? `${state.streak.count}-day streak!` : "Lesson complete!";
+  document.getElementById("celMsg").innerHTML = firstTime
+    ? `+20 XP earned.${goalMet ? " Today's habit is done — see you tomorrow to keep the streak alive." : ` ${GOAL[state.habit] - state.daily.lessons} more to hit today's goal.`}`
+    : `Nice review. ${goalMet ? "Today's goal already met!" : ""}`;
+  el.classList.add("show");
+  burstConfetti(80);
+}
+
+/* ---------- confetti ---------- */
+const confettiCanvas = document.getElementById("confetti");
+const cctx = confettiCanvas.getContext("2d");
+let parts = [];
+function sizeConfetti() { confettiCanvas.width = innerWidth; confettiCanvas.height = innerHeight; }
+addEventListener("resize", sizeConfetti); sizeConfetti();
+function burstConfetti(n) {
+  const colors = ["#6c5ce7", "#e6486a", "#f5a623", "#18b07b", "#2f6fed"];
+  for (let i = 0; i < n; i++) parts.push({
+    x: innerWidth / 2, y: innerHeight / 3,
+    vx: (Math.random() - 0.5) * 12, vy: Math.random() * -10 - 3,
+    g: 0.4, s: Math.random() * 7 + 4, c: colors[i % colors.length], life: 90, rot: Math.random() * 6
+  });
+  if (parts.length) runConfetti();
+}
+let rafOn = false;
+function runConfetti() {
+  if (rafOn) return; rafOn = true;
+  (function frame() {
+    cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    parts.forEach(p => { p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life--; p.rot += 0.2;
+      cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+      cctx.fillStyle = p.c; cctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); cctx.restore(); });
+    parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 30);
+    if (parts.length) requestAnimationFrame(frame); else { rafOn = false; cctx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
+  })();
+}
+
+/* ---------- interactive: fit the line ---------- */
+function initFitLine() {
+  const host = document.getElementById("widgetHost");
+  host.innerHTML = `
+    <div class="callout story" style="margin-top:0"><span class="lab">🎮 Fit the line</span>Move the sliders so the purple line hugs the dots. Smaller error = better fit.</div>
+    <div class="fitline">
+      <canvas id="flCanvas" width="640" height="300"></canvas>
+      <div class="fl-controls">
+        <div><label>Slope (m): <span id="mVal">1.0</span></label><input type="range" id="mSlide" min="0" max="4" step="0.1" value="1"></div>
+        <div><label>Start (b): <span id="bVal">10</span></label><input type="range" id="bSlide" min="0" max="80" step="2" value="10"></div>
+      </div>
+      <div class="fl-error" id="flErr"></div>
+    </div>`;
+
+  // sample: foot traffic (x) vs revenue in Rp x10k (y).  true relation ≈ 1.8x + 28
+  const data = [[22,70],[30,82],[38,95],[45,110],[52,118],[60,138],[68,150],[76,165],[85,182],[95,205]];
+  const cv = document.getElementById("flCanvas");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, pad = 40;
+  const xmax = 100, ymax = 240;
+  const X = x => pad + (x / xmax) * (W - pad * 1.4);
+  const Y = y => H - pad - (y / ymax) * (H - pad * 1.6);
+
+  function draw(m, b) {
+    ctx.clearRect(0, 0, W, H);
+    // axes
+    ctx.strokeStyle = "#dfe0f0"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - 10, H - pad); ctx.moveTo(pad, H - pad); ctx.lineTo(pad, 14); ctx.stroke();
+    ctx.fillStyle = "#9396b5"; ctx.font = "12px Segoe UI";
+    ctx.fillText("foot traffic →", W - 110, H - pad + 24);
+    ctx.save(); ctx.translate(14, 90); ctx.rotate(-Math.PI/2); ctx.fillText("revenue →", 0, 0); ctx.restore();
+    // line
+    ctx.strokeStyle = "#6c5ce7"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(X(0), Y(b)); ctx.lineTo(X(xmax), Y(m * xmax + b)); ctx.stroke();
+    // error sticks + points
+    let sse = 0;
+    data.forEach(([x, y]) => {
+      const pred = m * x + b; sse += (y - pred) ** 2;
+      ctx.strokeStyle = "rgba(230,72,106,.5)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(X(x), Y(y)); ctx.lineTo(X(x), Y(pred)); ctx.stroke();
+      ctx.fillStyle = "#1f2140"; ctx.beginPath(); ctx.arc(X(x), Y(y), 5, 0, 7); ctx.fill();
+    });
+    const rmse = Math.sqrt(sse / data.length);
+    const errEl = document.getElementById("flErr");
+    errEl.innerHTML = `Error (avg miss): <b>${rmse.toFixed(1)}</b>`;
+    if (rmse < 8) { errEl.classList.add("good"); errEl.innerHTML += " — great fit! 🎯"; }
+    else errEl.classList.remove("good");
+    return rmse;
+  }
+
+  const mS = document.getElementById("mSlide"), bS = document.getElementById("bSlide");
+  let celebrated = false;
+  function update() {
+    const m = +mS.value, b = +bS.value;
+    document.getElementById("mVal").textContent = m.toFixed(1);
+    document.getElementById("bVal").textContent = b;
+    const rmse = draw(m, b);
+    if (rmse < 8 && !celebrated) { celebrated = true; burstConfetti(30); }
+  }
+  mS.addEventListener("input", update); bS.addEventListener("input", update);
+  update();
+}
+
+/* ---------- navigation ---------- */
+function setNav(name) {
+  document.getElementById("navLearn").classList.toggle("active", name === "learn");
+  document.getElementById("navRoadmap").classList.toggle("active", name === "roadmap");
+}
+function goLearn() { setNav("learn"); renderHome(); show("home"); }
+function goRoadmap() { setNav("roadmap"); renderRoadmap(); show("roadmap"); }
+
+/* ---------- ROADMAP ---------- */
+function renderRoadmap() {
+  const total = CAREER_ROADMAP.length;
+  const done = CAREER_ROADMAP.filter(m => state.roadmapDone.includes(m.id)).length;
+  const pct = Math.round((done / total) * 100);
+
+  let html = `
+    <div class="eyebrow">The destination</div>
+    <h1 class="page-h">Become a professional AI / ML / Prompt Engineer</h1>
+    <p class="page-sub">Seven phases from today to a hireable engineer with a published paper. Each phase says what to <b>learn</b>, what to <b>build</b>, and how to <b>prove</b> it. Tick phases off as you finish — ${done}/${total} done (${pct}%).</p>
+    <div class="todaybar" style="margin:18px 0 26px;max-width:420px"><div style="width:${pct}%"></div></div>
+    <div class="road">
+      <div class="road-line"></div>`;
+
+  CAREER_ROADMAP.forEach(m => {
+    const isDone = state.roadmapDone.includes(m.id);
+    html += `
+      <div class="milestone ${isDone ? "done" : ""}" data-ms="${m.id}">
+        <div class="ms-dot">${isDone ? "✓" : m.icon}</div>
+        <div class="ms-card">
+          <div class="ms-head" data-toggle="${m.id}">
+            <div>
+              <div class="ms-phase">${m.phase} · ${m.time}</div>
+              <div class="ms-title">${m.title}</div>
+            </div>
+            <button class="chk" data-check="${m.id}" title="Mark complete">✓</button>
+            <span class="ms-toggle">▾</span>
+          </div>
+          <div class="ms-body">
+            <div class="ms-grid">
+              <div class="ms-col"><h4>📖 Learn</h4><ul>${m.learn.map(x => `<li>${x}</li>`).join("")}</ul></div>
+              <div class="ms-col build"><h4>🛠️ Build</h4><ul>${m.build.map(x => `<li>${x}</li>`).join("")}</ul></div>
+              <div class="ms-col prove"><h4>🎖️ Prove</h4><ul>${m.prove.map(x => `<li>${x}</li>`).join("")}</ul></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  html += `</div>
+    <div class="road-outcome">
+      <div class="eyebrow">Outcome by graduation (2028)</div>
+      <h3>A standout AI/ML engineer — not just a graduate</h3>
+      <p>Published Sinta 4 research (skripsi-exempt), a real internship, competition record, a portfolio of 4+ shipped projects, and the prompt-engineering + MLOps skills companies actually pay for.</p>
+    </div>`;
+
+  screens.roadmap.innerHTML = html;
+
+  // expand/collapse
+  screens.roadmap.querySelectorAll("[data-toggle]").forEach(h =>
+    h.addEventListener("click", e => {
+      if (e.target.closest("[data-check]")) return;
+      h.closest(".ms-card").classList.toggle("open");
+    }));
+  // check off
+  screens.roadmap.querySelectorAll("[data-check]").forEach(b =>
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      const id = b.dataset.check;
+      const i = state.roadmapDone.indexOf(id);
+      if (i >= 0) state.roadmapDone.splice(i, 1);
+      else { state.roadmapDone.push(id); burstConfetti(24); }
+      save(); renderRoadmap();
+    }));
+}
+
+/* ---------- boot ---------- */
+function boot() {
+  screens.home = document.getElementById("screen-home");
+  screens.chapter = document.getElementById("screen-chapter");
+  screens.lesson = document.getElementById("screen-lesson");
+  screens.roadmap = document.getElementById("screen-roadmap");
+  document.getElementById("brandHome").addEventListener("click", goLearn);
+  document.getElementById("navLearn").addEventListener("click", goLearn);
+  document.getElementById("navRoadmap").addEventListener("click", goRoadmap);
+  document.getElementById("celClose").addEventListener("click", () => {
+    document.getElementById("celebrate").classList.remove("show");
+    openChapter(lessonCtx.level.id, lessonCtx.chap.id);
+  });
+  renderHome();
+  show("home");
+}
+document.addEventListener("DOMContentLoaded", boot);

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cashlo AI Academy</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand" id="brandHome">
+        <div class="logo">☕</div>
+        <div><b>Cashlo<br>AI Academy</b><span>LEARN · BUILD · SHIP</span></div>
+      </div>
+
+      <button class="navitem active" id="navLearn"><span class="ic">📚</span> Learn</button>
+      <button class="navitem" id="navRoadmap"><span class="ic">🧭</span> Career Roadmap</button>
+
+      <div class="side-spacer"></div>
+
+      <div class="side-stats">
+        <div class="side-stat flame">
+          <span class="ic">🔥</span>
+          <div><div class="v" id="streakVal">0</div><div class="l">day streak</div></div>
+        </div>
+        <div class="side-stat">
+          <span class="ic">⭐</span>
+          <div><div class="v" id="xpVal">0</div><div class="l">total XP</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="screen-home" class="screen active"></section>
+      <section id="screen-chapter" class="screen"></section>
+      <section id="screen-lesson" class="screen"></section>
+      <section id="screen-roadmap" class="screen"></section>
+    </main>
+  </div>
+
+  <div class="celebrate" id="celebrate">
+    <div class="box">
+      <div class="big" id="celBig">🎉</div>
+      <h2 id="celTitle">Lesson complete!</h2>
+      <p id="celMsg"></p>
+      <button class="btn btn-primary" id="celClose">Keep going</button>
+    </div>
+  </div>
+
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
