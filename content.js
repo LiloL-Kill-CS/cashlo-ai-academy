@@ -95,6 +95,27 @@ const CURRICULUM = [
               { type: "callout", variant: "key", html: "<span class='lab'>🔑 Features → Label</span>Features are the clues (day_of_week, was_holiday, transactions). The label is the answer (tomorrow's revenue). A model learns the mapping: <b>features → label</b>." },
               { type: "quiz", q: "In your daily Cashlo export, you want to predict revenue from day_of_week and weather. Which is the label?", options: ["day_of_week", "weather", "revenue", "the date"], answer: 2, explain: "The label/target is what you predict — revenue. day_of_week and weather are features (the clues used to predict it)." }
             ]
+          },
+          {
+            id: "ch1-l2",
+            title: "Enough, not big (how much data?)",
+            minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>People hear \"AI\" and think you need <b>big data</b> — millions of rows. For your forecaster, that's the wrong target.</p><p><b>Big data</b> is the world of LLMs (ChatGPT, Claude) trained on the whole internet. Your cash-flow model is a small, focused model — it needs <b>enough, relevant, clean</b> data, not big data.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Big vs enough</span>LLMs need <i>billions</i> of examples. Your forecaster needs <i>enough relevant</i> ones — even ~3–6 months of clean daily Cashlo rows is a real starting point." },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Good news for you</span>You don't need to be a giant tech company. You need <i>your shop's honest history</i> — which you already have." },
+              { type: "quiz", q: "What does your coffee-shop forecaster mainly need?", options: ["Millions of rows (big data)", "Enough relevant, clean data", "More columns than rows", "No data — just rules"], answer: 1, explain: "Classic ML forecasting needs ENOUGH relevant, clean data — not 'big data'. Big data / pretraining is the LLM world, a different animal." }
+            ]
+          },
+          {
+            id: "ch1-l3",
+            title: "Garbage in, garbage out",
+            minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>The single most important rule in all of ML:</p><span class='formula'>garbage in → garbage out</span><p>A model is only as good as the data you feed it. A day you forgot to record, a typo'd Rp amount, a duplicate row — the model learns those mistakes as if they were real patterns.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ The 80% nobody warns you about</span>In real ML jobs, ~80% of the work is <b>cleaning data</b> — fixing missing days, obvious typos, duplicates — not the fancy model. Students always underestimate this. You won't." },
+              { type: "quiz", q: "Your sales export has a day where revenue was typed as 5,000,000 instead of 50,000. If you train on it as-is, what happens?", options: ["Nothing, models ignore outliers", "The model learns a false pattern and predicts worse", "It improves accuracy", "It fixes itself"], answer: 1, explain: "Bad data → bad model. That one typo drags the model's sense of a 'normal day' way off. Clean first, model second." }
+            ]
           }
         ]
       },
@@ -112,6 +133,27 @@ const CURRICULUM = [
               { type: "text", html: "<p>Old way (you, the programmer): write the rule. <code>if weekend: sales = sales * 1.3</code>. You have to know the rule and hand-code every one.</p><p>ML way: you show the machine thousands of past days, and <b>it discovers the rules itself</b> — including ones you'd never spot, like 'rainy paydays behave oddly.'</p>" },
               { type: "callout", variant: "story", html: "<span class='lab'>☕ Why this matters for you</span>You can't hand-code every pattern in your sales. But you HAVE the data. ML flips the problem: from 'know all the rules' to 'have good examples.' Cashlo gives you the examples — that's your unfair advantage." },
               { type: "quiz", q: "What's the core shift from traditional programming to machine learning?", options: ["From slow code to fast code", "From writing the rules yourself to learning rules from data", "From small data to big data only", "From Python to JavaScript"], answer: 1, explain: "Traditional: human writes rules. ML: machine infers rules from examples (data). That's the whole paradigm shift." }
+            ]
+          },
+          {
+            id: "ch2-l2",
+            title: "Generalization — ready for the unseen",
+            minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Here's the goal of machine learning, in one word: <b>generalization</b>.</p><p>It does <i>not</i> mean memorizing every past day. It means learning the underlying pattern well enough to handle a situation it has <b>never seen exactly before</b> — like a day that's summer <i>and</i> a holiday <i>and</i> raining, even if that exact combo never happened.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Generalization vs memorizing</span>A model that memorizes the past perfectly but flops on new days is <b>overfitting</b>. The whole game is being <i>versatile</i> on data you've never seen." },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ Honest limit</span>ML generalizes to new <i>combinations</i> of things it has signals for — but a truly unprecedented shock (a pandemic, going viral overnight) breaks every forecaster. No model is magic." },
+              { type: "quiz", q: "A model scores 100% on past days but predicts badly on new ones. What's wrong?", options: ["Great generalization", "Overfitting — poor generalization", "Too much correlation", "Not enough columns"], answer: 1, explain: "Memorizing the past ≠ understanding the pattern. That's overfitting — the opposite of the generalization you actually want." }
+            ]
+          },
+          {
+            id: "ch2-l3",
+            title: "Why good models go stale",
+            minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>Even a great model decays over time — because the <b>world changes</b>. A new menu, Ramadan, a competitor opening next door: the data your model learned from no longer matches today's reality.</p><p>This slow mismatch has a name: <b>concept drift</b>.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ This is your whole riset</span>No model trained once stays correct forever. The fix is a system that <b>watches its own errors grow and re-learns</b> — your self-improving loop. You'll build exactly this in the Advanced level." },
+              { type: "quiz", q: "Your model was accurate for months, then a new café opened next door and accuracy dropped. This is…", options: ["Overfitting", "Concept drift — the world changed", "Too little data", "A coding bug"], answer: 1, explain: "The model didn't break — reality shifted, so old patterns no longer hold. That's concept drift, and detecting it is step one of a self-improving system." }
             ]
           }
         ]
