@@ -78,11 +78,25 @@ function show(name) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+/* ---------- next incomplete lesson (for Resume) ---------- */
+function firstIncomplete() {
+  for (const level of CURRICULUM) {
+    if (isLevelLocked(level)) continue;
+    for (const chap of level.chapters) {
+      for (const les of chap.lessons) {
+        if (!state.completed.includes(les.id)) return { level, chap, lesson: les };
+      }
+    }
+  }
+  return null;
+}
+
 /* ---------- HOME ---------- */
 function renderHome() {
   const goal = GOAL[state.habit];
   const todayDone = Math.min(state.daily.lessons, goal);
   const pct = Math.round((todayDone / goal) * 100);
+  const next = firstIncomplete();
 
   let html = `
     <div class="hero">
@@ -90,6 +104,16 @@ function renderHome() {
       <h1>Learn AI from the ground up</h1>
       <p>Every idea is taught through Cashlo — building, step by step, toward your self-improving cash-flow forecaster and a Sinta&nbsp;4 paper.</p>
     </div>
+    ${next ? `
+    <button class="chap" id="resumeCard" style="display:flex;align-items:center;gap:16px;width:100%;margin-bottom:18px;border-color:var(--espresso);background:linear-gradient(180deg,#fff,#fdfaf5)">
+      <div style="font-size:30px">▶️</div>
+      <div style="flex:1;min-width:0">
+        <div class="eyebrow" style="color:var(--espresso)">Lanjut belajar · Continue</div>
+        <div class="ctitle" style="margin:3px 0 2px">${next.lesson.title}</div>
+        <div class="csum" style="min-height:0">${next.level.title} · ${next.chap.title}</div>
+      </div>
+      <span class="btn btn-primary" style="pointer-events:none;white-space:nowrap">Lanjut →</span>
+    </button>` : ""}
 
     <div class="habit">
       <h3>🎯 Today's habit ${state.daily.lessons >= goal ? "— done! 🎉" : ""}</h3>
@@ -148,8 +172,9 @@ function renderHome() {
 
   screens.home.querySelectorAll("[data-habit]").forEach(b =>
     b.addEventListener("click", () => { state.habit = b.dataset.habit; save(); renderHome(); }));
-  screens.home.querySelectorAll(".chap:not(.locked)").forEach(b =>
+  screens.home.querySelectorAll(".chap[data-chap]:not(.locked)").forEach(b =>
     b.addEventListener("click", () => openChapter(b.dataset.level, b.dataset.chap)));
+  if (next) document.getElementById("resumeCard")?.addEventListener("click", () => openLesson(next.lesson.id));
 
   renderTopbar();
 }

@@ -6,6 +6,80 @@
    =========================================================== */
 
 const CURRICULUM = [
+  /* ============ LEVEL 0 — PAKAI AI (Bahasa, entry track — built from Indonesia user research) ============ */
+  {
+    id: "pakai-ai",
+    title: "Pakai AI — Mulai di Sini",
+    subtitle: "Cara praktis pakai AI buat belajar & kerja (Bahasa Indonesia)",
+    color: "#2f7280",
+    emoji: "💬",
+    chapters: [
+      {
+        id: "p1", emoji: "🚀",
+        title: "Bab 1 — Mulai Pakai AI",
+        summary: "Apa yang AI bisa & nggak bisa, dan cara nyuruh yang bener.",
+        lessons: [
+          {
+            id: "p1-l1", title: "AI itu jago apa, lemah apa?", minutes: 5,
+            blocks: [
+              { type: "text", html: "<p>AI kayak ChatGPT, Claude, atau Gemini itu <b>jago</b>: meringkas bacaan, menjelaskan konsep susah, brainstorm ide, memperbaiki tulisan, latihan bahasa.</p><p>Tapi <b>lemah</b> di: fakta terbaru/akurat (bisa ngarang!), hitungan rumit, dan apa pun yang butuh data pribadi atau real-time toko kamu.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Cara mikirnya</span>Anggap AI = asisten pintar yang kadang <i>sok tahu</i>. Hebat buat draft & ide — tapi keputusan & cek fakta tetap di tangan kamu." },
+              { type: "quiz", q: "Tugas mana yang paling cocok dikasih ke AI?", options: ["Kasih tahu angka penjualan tokomu hari ini", "Meringkas & menjelaskan bab kuliah", "Mutusin keputusan besar hidupmu", "Menjamin fakta 100% benar"], answer: 1, explain: "AI hebat buat menjelaskan & meringkas. Dia nggak tahu data real-time tokomu, dan jangan dijadikan penjamin fakta atau pengambil keputusan." }
+            ]
+          },
+          {
+            id: "p1-l2", title: "Prompt pertama yang bagus", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p><b>Prompt</b> = perintah yang kamu kasih ke AI. Hasil jelek biasanya karena prompt-nya jelek.</p><p>Prompt jelek: <code>buatin tugas</code>. Prompt bagus kasih <b>konteks + tujuan + format</b>:</p><span class='formula'>Aku mahasiswa Informatika sem 5. Jelaskan 'overfitting' pakai analogi sederhana, maks 5 kalimat, Bahasa Indonesia.</span>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚙️ Rumus cepat</span>[Kamu siapa] + [maunya apa] + [format/batasan]. Makin jelas promptnya, makin pas jawabannya." },
+              { type: "quiz", q: "Mana prompt yang bakal kasih hasil paling bagus?", options: ["jelasin database", "Jelaskan konsep database relasional buat pemula, pakai analogi lemari arsip, maks 4 poin", "tolong bantu tugasku", "database itu apa sih"], answer: 1, explain: "Yang menang kasih konteks (pemula), format (4 poin), dan cara (analogi). Spesifik = jawaban jauh lebih berguna." }
+            ]
+          },
+          {
+            id: "p1-l3", title: "3 cara langsung kepake hari ini", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p><b>1. Belajar:</b> minta AI jelasin konsep susah pakai analogi, terus suruh dia <i>kasih kuis</i> ke kamu.<br><b>2. Tugas (etis):</b> minta <i>outline</i> atau <i>feedback</i> — bukan jawaban jadi buat di-copy.<br><b>3. Komunikasi:</b> minta AI perbaiki pesan ke dosen biar sopan, jelas, dan rapi.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>📊 Kamu nggak sendirian</span>Menurut data OpenAI, cara #1 mahasiswa Indonesia pakai ChatGPT adalah <b>belajar</b> — persis 3 hal di atas." },
+              { type: "quiz", q: "Cara pakai AI yang sehat buat tugas kuliah?", options: ["Suruh AI kerjain semua, langsung submit", "Minta AI bikin outline & kasih feedback, kamu yang nulis", "Copy-paste tanpa dibaca", "Pakai diam-diam biar nggak ketahuan"], answer: 1, explain: "AI buat bantu mikir (outline, feedback), bukan ganti mikir. Itu yang bikin kamu makin pinter, bukan makin malas." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "p2", emoji: "🎯",
+        title: "Bab 2 — Jago Prompt & Tetap Aman",
+        summary: "Kasih konteks, ngobrol bolak-balik, dan jangan ketipu jawaban AI.",
+        lessons: [
+          {
+            id: "p2-l1", title: "Bikin AI ngerti maksudmu", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>Dua trik yang bikin jawaban AI naik kelas:</p><p><b>Kasih peran:</b> 'Jadilah tutor yang sabar buat pemula.'<br><b>Kasih contoh:</b> tunjukin 1–2 contoh format yang kamu mau, biar AI niru gayanya.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Peran + contoh</span>Ngasih AI sebuah peran dan satu contoh = jawaban yang jauh lebih nyambung sama kebutuhanmu." },
+              { type: "quiz", q: "Kenapa ngasih contoh ke AI itu ngebantu?", options: ["Biar promptnya panjang", "Biar AI niru format & gaya yang kamu mau", "Nggak ngaruh", "Biar AI bingung"], answer: 1, explain: "Contoh (few-shot) ngasih AI pola yang harus diikuti — hasilnya jadi konsisten sama yang kamu bayangin." }
+            ]
+          },
+          {
+            id: "p2-l2", title: "Ngobrol, bukan sekali tembak", minutes: 5,
+            blocks: [
+              { type: "text", html: "<p>Jawaban pertama jarang langsung sempurna — dan itu wajar. Lanjutin aja: <code>terlalu panjang, ringkas dong</code>, <code>kasih contoh konteks Indonesia</code>, <code>ubah jadi tabel</code>. AI inget obrolan sebelumnya.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚙️ Iterasi</span>Anggap kayak ngobrol sama asisten: kasih koreksi bertahap. 2–3 kali bolak-balik biasanya ngalahin satu prompt panjang." },
+              { type: "quiz", q: "Jawaban AI kepanjangan dan kurang pas. Langkah terbaik?", options: ["Nyerah, tulis sendiri dari nol", "Bales: 'ringkas jadi 3 poin, fokus ke X'", "Kirim ulang prompt yang sama persis", "Ganti aplikasi"], answer: 1, explain: "Iterasi. AI inget konteks — tinggal arahin: lebih pendek, lebih fokus, format beda. Itu skill prompt yang sebenarnya." }
+            ]
+          },
+          {
+            id: "p2-l3", title: "Jangan ketipu AI", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>Ini pelajaran terpenting. AI bisa <b>ngarang dengan pede</b> — namanya <b>halusinasi</b>. Dia bisa bikin kutipan, sumber, angka, atau fakta yang <i>kelihatan</i> meyakinkan padahal salah/palsu.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Aturan emas</span>AI buat <b>DRAFT & IDE</b>. Otak kamu buat <b>KEPUTUSAN & VERIFIKASI</b>. Hal penting (angka, sumber, hukum, medis) selalu cek ke sumber asli. Jangan matiin nalar kritismu." },
+              { type: "callout", variant: "story", html: "<span class='lab'>📊 Kenapa ini penting</span>Riset pendidikan di Indonesia: kekhawatiran #1 soal AI = ketergantungan & turunnya berpikir kritis. Lesson ini obatnya." },
+              { type: "quiz", q: "AI ngasih kutipan jurnal yang kelihatan rapi & meyakinkan buat tugasmu. Kamu...", options: ["Langsung pakai, kelihatan valid", "Cek dulu jurnalnya beneran ada sebelum dipakai", "Percaya karena rapi", "Minta AI bikin lebih banyak kutipan"], answer: 1, explain: "AI sering mengarang sumber (halusinasi). Selalu verifikasi kutipan ke database asli — kalau nggak ketemu, jangan dipakai." }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
   /* ============ LEVEL 1 — BEGINNER ============ */
   {
     id: "beginner",
