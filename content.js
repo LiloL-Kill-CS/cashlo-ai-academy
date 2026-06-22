@@ -166,25 +166,98 @@ const CURRICULUM = [
     id: "intermediate",
     title: "Intermediate — Building Models",
     subtitle: "From a line to a real forecaster on your own data",
-    color: "#6c5ce7",
+    color: "#b07d2b",
     emoji: "⚙️",
     lockedUntil: "beginner",
     chapters: [
-      { id: "ch3", emoji: "📈", title: "Chapter 3 — Your First Predictor", summary: "Regression on real Cashlo data. Train/test split. Overfitting, the villain.", lessons: [
-        { id: "ch3-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 Coming next</span>We build this together right after you finish Beginner. It maps to Stage 2 in your learning plan — your first model predicting Cashlo revenue." }
-        ]}
-      ]},
-      { id: "ch4", emoji: "⏳", title: "Chapter 4 — Time Series & Forecasting", summary: "Trend, seasonality, and why you NEVER shuffle time. The heart of your riset.", lessons: [
-        { id: "ch4-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 Coming next</span>This is your riset's core (Stage 3). Forecasting cash flow 7 days ahead, backtested for real accuracy." }
-        ]}
-      ]},
-      { id: "ch5", emoji: "🎯", title: "Chapter 5 — Measuring & Trusting a Model", summary: "MAE, RMSE, backtesting — proving your model actually works.", lessons: [
-        { id: "ch5-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 Coming next</span>How to honestly measure error — the section that makes your paper credible to reviewers." }
-        ]}
-      ]}
+      {
+        id: "ch3", emoji: "📈",
+        title: "Chapter 3 — Your First Predictor",
+        summary: "Regression on real Cashlo data, the train/test split, and overfitting — the villain.",
+        lessons: [
+          {
+            id: "ch3-l1", title: "From a line to a predictor", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Remember the line you dragged in Chapter 0? <span class='formula'>revenue = m · (foot traffic) + b</span>That fitted line <i>is</i> a model — specifically <b>linear regression</b>. Once you've found a good <code>m</code> and <code>b</code>, you feed in a new foot-traffic number and out comes a revenue prediction.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 More clues = more dimensions</span>Real forecasting uses many features at once (day_of_week, is_holiday, transactions…). The math just adds a slope per feature: <code>revenue = m1·x1 + m2·x2 + … + b</code>. Same idea, more clues." },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ On your data</span>Your first real model: predict daily Cashlo revenue from a handful of columns. It won't be perfect — but if it beats the dumb average, you've built something real." },
+              { type: "quiz", q: "Linear regression with several features predicts by…", options: ["Memorizing past days", "Adding up each feature times its own slope, plus a baseline", "Picking the most common value", "Sorting the data"], answer: 1, explain: "Each feature gets a weight (slope); the model sums feature×weight plus an intercept. Training = finding the weights that minimize error (gradient descent, from Ch0)." }
+            ]
+          },
+          {
+            id: "ch3-l2", title: "Don't grade your own homework", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Here's the rule that separates real ML from self-deception. You must <b>split your data</b>: train the model on most of it (the <b>training set</b>), then test it on data it has <b>never seen</b> (the <b>test set</b>).</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ Why it matters</span>If you measure accuracy on the same days the model trained on, of course it looks amazing — it already saw the answers. That's grading your own homework. The test set is the honest exam." },
+              { type: "quiz", q: "Why hold out a test set the model never trained on?", options: ["To have more data", "To get an honest estimate of how it performs on the future", "To make training faster", "It's optional"], answer: 1, explain: "Accuracy on training data is inflated (it saw the answers). The held-out test set estimates real-world performance — the only number you can trust." }
+            ]
+          },
+          {
+            id: "ch3-l3", title: "Overfitting — the villain", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Back in Chapter 2 you met <b>generalization</b>. Its enemy has a name: <b>overfitting</b> — when a model memorizes the training data (even its random noise) instead of learning the real pattern.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 How to spot it</span>Overfitting looks like: <b>great</b> on the training set, <b>bad</b> on the test set. The gap between the two is the tell. The fix: simpler model, more data, or fewer features." },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Coffee example</span>A model that learns 'on March 3rd last year sales were exactly 47' has memorized a fluke. A model that learns 'Saturdays are ~60% busier' has learned a pattern. You want the second." },
+              { type: "quiz", q: "A model scores 99% on training data but 60% on the test set. This is…", options: ["A great model", "Overfitting", "Underfitting", "Concept drift"], answer: 1, explain: "Big train–test gap = overfitting: it memorized instead of generalizing. Simplify the model or add data." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "ch4", emoji: "⏳",
+        title: "Chapter 4 — Time Series & Forecasting",
+        summary: "Trend, seasonality, and why you NEVER shuffle time. The heart of your riset.",
+        lessons: [
+          {
+            id: "ch4-l1", title: "Time is special — never shuffle it", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Forecasting has one iron rule that normal ML doesn't: <b>never shuffle time</b>. You train on the <i>past</i> and test on the <i>future</i> — always in chronological order.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ Data leakage</span>If you randomly shuffle days into train/test, the model gets to 'see' future days while training — it's basically cheating by peeking. Your accuracy looks brilliant and then collapses in real life. Split by date: e.g. train on Jan–Oct, test on Nov–Dec." },
+              { type: "quiz", q: "For a cash-flow forecaster, how should you split train vs test?", options: ["Randomly shuffle the days", "Chronologically — past for training, later dates for testing", "Alphabetically", "Doesn't matter"], answer: 1, explain: "Time series must be split by time. Random shuffling leaks the future into training and gives a dangerously optimistic score." }
+            ]
+          },
+          {
+            id: "ch4-l2", title: "Trend & seasonality", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Most sales data is made of three things stacked together:</p><p><b>Trend</b> — the slow direction (is the shop growing month over month?). <b>Seasonality</b> — repeating cycles (weekly: weekends busy; yearly: Ramadan, holidays). <b>Noise</b> — the random leftover.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Why split them out</span>If you can describe the trend and the seasonal pattern, you've explained most of the predictable part of your sales. What's left (noise) is the part no model can nail — and that's okay." },
+              { type: "quiz", q: "Your café sells more every weekend and even more during Ramadan. Those repeating patterns are called…", options: ["Trend", "Seasonality", "Noise", "Overfitting"], answer: 1, explain: "Repeating cycles (weekly, yearly, holidays) = seasonality. The slow long-term direction is trend; the random leftover is noise." }
+            ]
+          },
+          {
+            id: "ch4-l3", title: "Beat the baseline first", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Before any fancy model, build the dumb ones — your <b>baselines</b>:</p><p><b>Naive:</b> 'tomorrow = today.' <b>Seasonal-naive:</b> 'next Saturday = last Saturday.' (You invented this one yourself!)</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ The honesty gate</span>A fancy model is only worth its complexity if it <b>beats</b> these baselines. Many real-world 'AI forecasts' quietly lose to seasonal-naive. Always report the comparison — it's what makes your riset credible." },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚙️ Lag features</span>The trick that lets a normal model do time series: feed it the recent past as columns — yesterday's sales, last week's same-day sales. Those 'lag features' turn history into clues." },
+              { type: "quiz", q: "Why build naive & seasonal-naive baselines before a real model?", options: ["They're the final answer", "To prove your real model actually adds value by beating them", "To use more data", "They train faster"], answer: 1, explain: "Baselines are the bar to clear. If your model can't beat 'next Saturday = last Saturday', the complexity isn't earning its keep — a key check reviewers look for." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "ch5", emoji: "🎯",
+        title: "Chapter 5 — Measuring & Trusting a Model",
+        summary: "MAE, RMSE, MAPE, backtesting — proving your model actually works.",
+        lessons: [
+          {
+            id: "ch5-l1", title: "How wrong is wrong? (MAE & RMSE)", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>To improve a model you must measure its error. Two staples:</p><p><b>MAE</b> (mean absolute error) — the average miss, in rupiah. Easy to explain: 'on average we're off by Rp 80k.' <b>RMSE</b> — similar, but it <b>punishes big misses harder</b> (it squares the errors).</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Which to use</span>Use <b>MAE</b> when all errors hurt equally. Use <b>RMSE</b> when a few huge misses are especially bad (e.g. badly underestimating a busy day and running out of stock)." },
+              { type: "quiz", q: "You really want to avoid occasional huge prediction misses. Which metric fits?", options: ["MAE", "RMSE (it penalizes large errors more)", "Neither", "Accuracy"], answer: 1, explain: "RMSE squares errors, so big misses dominate the score — exactly what you want when large errors are the costly ones." }
+            ]
+          },
+          {
+            id: "ch5-l2", title: "Backtesting — honest accuracy over time", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>A single train/test split gives one number. <b>Backtesting</b> (walk-forward validation) does better: train on data up to a point, predict the next stretch, slide forward, repeat. You get accuracy across <i>many</i> periods, not just one lucky one.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Why your riset needs it</span>Backtesting is how you prove the forecaster works <i>consistently</i> — and later, it's how you'll show the <b>self-improving loop</b> getting better over time. It's the evidence in your paper." },
+              { type: "quiz", q: "What does backtesting (walk-forward) give you over a single split?", options: ["A faster model", "Accuracy measured across many time periods, not one", "More training data", "A simpler model"], answer: 1, explain: "Walk-forward validation tests the model repeatedly as time advances, so your accuracy estimate is robust — not a fluke of one chosen split." }
+            ]
+          }
+        ]
+      }
     ]
   },
 
@@ -193,7 +266,7 @@ const CURRICULUM = [
     id: "advanced",
     title: "Advanced — Self-Improving Systems",
     subtitle: "The RSI-inspired loop that makes your riset novel",
-    color: "#e6486a",
+    color: "#c2543f",
     emoji: "🚀",
     lockedUntil: "intermediate",
     chapters: [
