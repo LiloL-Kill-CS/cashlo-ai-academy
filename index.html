@@ -21,6 +21,8 @@
 
       <div class="side-spacer"></div>
 
+      <div class="side-rank" id="rankBox"></div>
+
       <div class="side-stats">
         <div class="side-stat flame">
           <span class="ic">🔥</span>
@@ -50,7 +52,23 @@
     </div>
   </div>
 
-  <script src="content.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <div class="cert-overlay" id="certOverlay">
+    <div class="cert" id="certCard">
+      <div class="cert-seal">🎓</div>
+      <div class="cert-kicker">Sertifikat Penyelesaian · Certificate of Completion</div>
+      <div class="cert-for">Diberikan dengan bangga kepada</div>
+      <div class="cert-name" id="certName">Pelajar</div>
+      <div class="cert-for">atas penyelesaian level</div>
+      <div class="cert-level" id="certLevel">Level</div>
+      <div class="cert-meta"><span id="certDate"></span> · Cashlo AI Academy</div>
+    </div>
+    <div class="cert-actions">
+      <button class="btn btn-primary" id="certPrint">🖨️ Cetak / Simpan</button>
+      <button class="btn btn-ghost" id="certClose">Tutup</button>
+    </div>
+  </div>
+
+  <script src="content.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

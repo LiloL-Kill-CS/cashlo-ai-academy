@@ -22,7 +22,7 @@ function yesterdayStr() {
 
 /* ---------- state ---------- */
 function defaultState() {
-  return { completed: [], xp: 0, habit: "small", roadmapDone: [],
+  return { completed: [], xp: 0, habit: "small", roadmapDone: [], userName: "",
     streak: { count: 0, longest: 0, lastCredit: null },
     daily: { date: todayStr(), lessons: 0 } };
 }
@@ -40,9 +40,22 @@ function loadState() {
   if (!Array.isArray(s.roadmapDone)) s.roadmapDone = [];
   if (typeof s.xp !== "number") s.xp = 0;
   if (!s.habit) s.habit = "small";
+  if (typeof s.userName !== "string") s.userName = "";
   return s;
 }
 function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+
+/* ---------- ranks (XP-based titles) ---------- */
+const RANKS = [
+  { min: 0, t: "Pemula", e: "🌱" },
+  { min: 70, t: "Penjelajah", e: "🧭" },
+  { min: 160, t: "Terampil", e: "⚙️" },
+  { min: 300, t: "Mahir", e: "🚀" },
+  { min: 500, t: "Ahli AI", e: "🧠" },
+  { min: 800, t: "Master", e: "👑" },
+];
+function rankFor(xp) { let r = RANKS[0]; for (const x of RANKS) if (xp >= x.min) r = x; return r; }
+function nextRank(xp) { return RANKS.find(x => x.min > xp) || null; }
 
 /* ---------- lookups ---------- */
 function allLessons(level) { return level.chapters.flatMap(c => c.lessons); }
@@ -68,6 +81,15 @@ function findLesson(id) {
 function renderTopbar() {
   document.getElementById("streakVal").textContent = state.streak.count;
   document.getElementById("xpVal").textContent = state.xp;
+  const box = document.getElementById("rankBox");
+  if (box) {
+    const r = rankFor(state.xp), nx = nextRank(state.xp);
+    const pct = nx ? Math.round((state.xp - r.min) / (nx.min - r.min) * 100) : 100;
+    box.innerHTML =
+      `<div class="rk-top"><span class="rk-emoji">${r.e}</span><span class="rk-title">${r.t}</span></div>` +
+      `<div class="rk-bar"><div style="width:${pct}%"></div></div>` +
+      `<div class="rk-next">${nx ? `${nx.min - state.xp} XP → ${nx.t}` : "Rank tertinggi! 👑"}</div>`;
+  }
 }
 
 /* ---------- screens ---------- */
@@ -345,8 +367,30 @@ function finishLesson() {
     state.streak.longest = Math.max(state.streak.longest, state.streak.count);
     streakUp = true;
   }
+  // Did this lesson just complete a whole level? -> certificate moment.
+  let doneLevel = null;
+  if (firstTime) {
+    const fl = findLesson(id);
+    if (fl && levelComplete(fl.level)) doneLevel = fl.level;
+  }
   save(); renderTopbar();
-  celebrate(firstTime, streakUp);
+  if (doneLevel) showCertificate(doneLevel);
+  else celebrate(firstTime, streakUp);
+}
+
+/* ---------- certificate (on completing a whole level) ---------- */
+function showCertificate(level) {
+  if (!state.userName) {
+    const n = (typeof prompt === "function") ? prompt("Nama kamu untuk sertifikat:", "") : "";
+    state.userName = (n && n.trim()) ? n.trim() : "Pelajar";
+    save();
+  }
+  document.getElementById("certName").textContent = state.userName;
+  document.getElementById("certLevel").textContent = level.title;
+  document.getElementById("certDate").textContent =
+    new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  document.getElementById("certOverlay").classList.add("show");
+  burstConfetti(140);
 }
 
 /* ---------- celebration ---------- */
@@ -539,6 +583,11 @@ function boot() {
   document.getElementById("celClose").addEventListener("click", () => {
     document.getElementById("celebrate").classList.remove("show");
     openChapter(lessonCtx.level.id, lessonCtx.chap.id);
+  });
+  document.getElementById("certPrint").addEventListener("click", () => window.print());
+  document.getElementById("certClose").addEventListener("click", () => {
+    document.getElementById("certOverlay").classList.remove("show");
+    goLearn();
   });
   renderHome();
   show("home");
