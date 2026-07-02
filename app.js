@@ -43,7 +43,32 @@ function loadState() {
   if (typeof s.userName !== "string") s.userName = "";
   return s;
 }
-function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); syncProgress(); }
+
+/* ---------- cloud progress sync (Supabase) ----------
+   Fire-and-forget upsert so learning progress is visible to Claude (mentor)
+   in real time. No reads from the client; RLS = insert/update only. */
+const SB_URL = "https://qhvzoahjlfffoiqufokb.supabase.co";
+const SB_KEY = "sb_publishable_xJHcN64h-Oh2yGiEEfG2nA_H565KNNY";
+let _lastSync = 0;
+function syncProgress() {
+  try {
+    if (!state.deviceId) { state.deviceId = "dev-" + Math.random().toString(36).slice(2, 10); localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+    const now = Date.now();
+    if (now - _lastSync < 8000) return;   // gentle throttle
+    _lastSync = now;
+    fetch(`${SB_URL}/rest/v1/progress?on_conflict=id`, {
+      method: "POST",
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ id: state.deviceId, payload: {
+        userName: state.userName || null, xp: state.xp, streak: state.streak.count,
+        longest: state.streak.longest, habit: state.habit,
+        completed: state.completed, roadmapDone: state.roadmapDone,
+        lastLesson: state.completed[state.completed.length - 1] || null
+      }, updated_at: new Date().toISOString() })
+    }).catch(() => {});
+  } catch (e) { /* offline / blocked — never break the app */ }
+}
 
 /* ---------- ranks (XP-based titles) ---------- */
 const RANKS = [
@@ -313,6 +338,7 @@ function renderLessonStep() {
       <button class="btn-back" id="lessonBack">← ${chap.title}</button>
       <div class="lesson-progress"><div style="width:${pct}%"></div></div>
       <div class="step-count">${idx + 1}/${steps.length}</div>
+      <button class="btn-back" id="askClaude" title="Tanya Claude tentang lesson ini">🤖 Tanya</button>
     </div>
     <div class="lesson-card">${body}</div>
     <div class="lesson-nav">
@@ -321,6 +347,12 @@ function renderLessonStep() {
     </div>`;
 
   document.getElementById("lessonBack").addEventListener("click", () => openChapter(level.id, chap.id));
+  document.getElementById("askClaude").addEventListener("click", () => {
+    const question = window.prompt("Mau tanya apa tentang lesson ini? (dikirim ke Claude dengan konteks lengkap)");
+    if (question === null) return;
+    const ctx = `Saya sedang belajar di Cashlo AI Academy (app belajar AI saya).\nLevel: ${level.title}\nChapter: ${chap.title}\nLesson: "${lesson.title}" (step ${idx + 1}/${steps.length}).\n\nTolong jawab dengan penjelasan yang jelas + visual/diagram kalau membantu.\nPertanyaan saya: ${question || "Tolong jelaskan lesson ini lebih dalam dengan contoh."}`;
+    window.open("https://claude.ai/new?q=" + encodeURIComponent(ctx), "_blank");
+  });
   document.getElementById("prevBtn").addEventListener("click", () => { lessonCtx.idx--; renderLessonStep(); });
   document.getElementById("nextBtn").addEventListener("click", () => {
     if (last) finishLesson();
@@ -328,6 +360,7 @@ function renderLessonStep() {
   });
 
   if (step.kind === "interactive" && step.block.widget === "fitLine") initFitLine();
+  if (step.kind === "interactive" && step.block.widget === "gradientDescent") initGradientDescent();
   if (step.kind === "quiz") wireQuiz(step.block);
 }
 
@@ -507,6 +540,58 @@ function initFitLine() {
   }
   mS.addEventListener("input", update); bS.addEventListener("input", update);
   update();
+}
+
+/* ---------- interactive: gradient descent machine ---------- */
+function initGradientDescent() {
+  const host = document.getElementById("widgetHost");
+  host.innerHTML = `
+    <div class="callout story" style="margin-top:0"><span class="lab">🎮 The error valley</span>The curve is the model's ERROR. The ball is the current weight. Pick a learning rate, press <b>Step</b> — reach the bottom (error &lt; 45) without exploding!</div>
+    <div class="fitline">
+      <canvas id="gdCanvas" width="640" height="300"></canvas>
+      <div class="fl-controls">
+        <div><label>Learning rate: <span id="lrVal">0.10</span></label><input type="range" id="lrSlide" min="0.02" max="1.10" step="0.02" value="0.10"></div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <button class="btn btn-primary" id="gdStep" style="flex:1;padding:11px">⛷️ Step</button>
+          <button class="btn btn-ghost" id="gdReset" style="padding:11px 16px">Reset</button>
+        </div>
+      </div>
+      <div class="fl-error" id="gdErr"></div>
+    </div>`;
+
+  const cv = document.getElementById("gdCanvas"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const f = x => 8 * (x - 3) ** 2 + 40;          // error valley, min at x=3 (error 40)
+  const df = x => 16 * (x - 3);                  // its derivative
+  const X = x => 60 + (x / 6.5) * (W - 90);
+  const Y = e => H - 30 - ((e - 20) / 420) * (H - 60);
+  let x = 0.4, steps = 0, done = false;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "#dfe0f0"; ctx.beginPath(); ctx.moveTo(40, H - 30); ctx.lineTo(W - 10, H - 30); ctx.stroke();
+    ctx.strokeStyle = "#7c4a63"; ctx.lineWidth = 3; ctx.beginPath();
+    for (let xx = 0; xx <= 6.5; xx += 0.05) { const px = X(xx), py = Y(f(xx)); xx === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+    ctx.stroke();
+    // minimum marker
+    ctx.fillStyle = "#0f7a63"; ctx.font = "12px Segoe UI"; ctx.fillText("⬇ minimum", X(3) - 30, Y(40) + 24);
+    // ball
+    const e = f(x);
+    ctx.fillStyle = "#c2543f"; ctx.beginPath(); ctx.arc(X(x), Y(e) - 8, 9, 0, 7); ctx.fill();
+    const errEl = document.getElementById("gdErr");
+    if (e > 1500) { errEl.innerHTML = `💥 <b>DIVERGED!</b> Error exploded after ${steps} steps — learning rate too big. Reset & try smaller.`; errEl.classList.remove("good"); done = true; }
+    else if (e < 45) { errEl.innerHTML = `🎯 <b>Converged in ${steps} steps!</b> Error = ${e.toFixed(1)}. That's gradient descent.`; errEl.classList.add("good"); if (!done) { done = true; burstConfetti(40); } }
+    else { errEl.innerHTML = `weight x = <b>${x.toFixed(2)}</b> · error = <b>${e.toFixed(1)}</b> · steps: ${steps}`; errEl.classList.remove("good"); }
+  }
+  document.getElementById("lrSlide").addEventListener("input", ev => document.getElementById("lrVal").textContent = (+ev.target.value).toFixed(2));
+  document.getElementById("gdStep").addEventListener("click", () => {
+    if (done) return;
+    const lr = +document.getElementById("lrSlide").value;
+    x = x - lr * df(x) / 6;                       // scaled: lr≈0.37 optimal, lr>0.75 diverges visibly
+    steps++; draw();
+  });
+  document.getElementById("gdReset").addEventListener("click", () => { x = 0.4; steps = 0; done = false; draw(); });
+  draw();
 }
 
 /* ---------- Latihan (practice / active recall) ---------- */

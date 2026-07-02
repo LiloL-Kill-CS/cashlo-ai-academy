@@ -235,6 +235,112 @@ const CURRICULUM = [
     ]
   },
 
+  /* ============ MATH FOR AI — the mathematical mindset track ============ */
+  {
+    id: "math-ai",
+    title: "Math for AI — The Mindset",
+    subtitle: "Linear algebra, calculus, probability — the three languages every model speaks",
+    color: "#7c4a63",
+    emoji: "📐",
+    chapters: [
+      {
+        id: "chM1", emoji: "🧮",
+        title: "Math 1 — Linear Algebra: the language of data",
+        summary: "Vectors, dot products, matrices — why every dataset is secretly a grid of numbers.",
+        lessons: [
+          {
+            id: "chM1-l1", title: "A vector is just a row of your data", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Forget arrows in physics class. In AI, a <b>vector</b> is simply <b>a list of numbers describing one thing</b>.</p><p>One day at your coffee shop: <code>[transactions=12, items=31, revenue=350000, is_weekend=1]</code>. That's a vector. Your whole ML export? A stack of these — one vector per day.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 The mental shift</span>Every row of data = a vector = <b>a point in space</b>. A day with 4 numbers is a point in 4-dimensional space. 'Similar days' are literally points that sit close together. ML lives in that space." },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Why you care</span>When a model says 'this Saturday looks like past Saturdays', mathematically it means: this day's vector is close to those days' vectors. Distance between vectors = similarity between days." },
+              { type: "quiz", q: "In ML, one row of your daily sales export (5 columns) is best thought of as…", options: ["A sentence", "A vector — a point in 5-dimensional space", "A random number", "An image"], answer: 1, explain: "Each row = a vector; each column = a dimension. 'Similar days' = nearby points. This one idea unlocks half of machine learning." }
+            ]
+          },
+          {
+            id: "chM1-l2", title: "The dot product — one number for 'how aligned?'", minutes: 8,
+            blocks: [
+              { type: "text", html: "<p>The most-used operation in all of AI. Take two vectors, multiply matching entries, add them up:</p><span class='formula'>[2, 3] · [4, 1] = 2×4 + 3×1 = 11</span><p>What does it MEAN? It measures <b>agreement</b>: big positive = the vectors point the same way; zero = unrelated; negative = opposed.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 You've already used it!</span>A prediction from your Stage-2 model was literally <code>features · weights</code> — the dot product of the day's clue-vector with the learned weight-vector. Every neural network is millions of dot products. That's the whole trick.</span>" },
+              { type: "quiz", q: "A linear model predicts revenue by computing features · weights. This operation is…", options: ["A dot product", "A division", "A sorting", "A random guess"], answer: 0, explain: "prediction = w1·x1 + w2·x2 + … = the dot product. From your from-scratch regression to GPT, this is the atomic operation of AI." }
+            ]
+          },
+          {
+            id: "chM1-l3", title: "Matrices — many vectors at once", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Stack your 137 day-vectors on top of each other → a <b>matrix</b> (137 rows × 5 columns). Your CSV <i>is</i> a matrix.</p><p><b>Matrix multiplication</b> = doing many dot products at once: multiply the data matrix by the weight vector and you get <b>all 137 predictions in one operation</b>.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚙️ Why GPUs exist</span>Graphics cards happen to be matrix-multiplication machines. That's the entire reason AI runs on GPUs — training a model is trillions of dot products, and GPUs do them in parallel." },
+              { type: "quiz", q: "Multiplying your (137×5) data matrix by a (5×1) weight vector gives…", options: ["One number", "137 predictions at once", "5 new features", "An error"], answer: 1, explain: "Each row's dot product with the weights = that day's prediction; the matrix does all rows at once. Batch prediction = one matrix multiply." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "chM2", emoji: "⛷️",
+        title: "Math 2 — Calculus: the engine of learning",
+        summary: "Derivatives, gradients, learning rate — play with a real gradient-descent machine.",
+        lessons: [
+          {
+            id: "chM2-l1", title: "The derivative — 'if I nudge this, what happens?'", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Forget limit notation for a moment. A <b>derivative</b> answers one everyday question: <b>if I change the input a tiny bit, how much does the output change?</b></p><p>Raise your latte price by Rp 500 → daily profit changes by how much? That sensitivity — <i>change out per change in</i> — is a derivative.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 In ML</span>The question becomes: <i>if I nudge this weight, does the ERROR go up or down, and how fast?</i> The derivative of error with respect to each weight tells the model exactly which knob to turn and which way. That's all 'learning' is." },
+              { type: "quiz", q: "In training, the derivative of the error with respect to a weight tells the model…", options: ["The final answer", "Which direction (and how strongly) to adjust that weight", "How much data it has", "Nothing useful"], answer: 1, explain: "Positive derivative → error rises if weight rises → lower the weight (and vice versa). Learning = following these sensitivities downhill." }
+            ]
+          },
+          {
+            id: "chM2-l2", title: "Drive the gradient descent machine", minutes: 9,
+            blocks: [
+              { type: "text", html: "<p>The <b>gradient</b> is just the collection of all those derivatives — the 'downhill direction' on the error mountain. <b>Gradient descent</b>: step downhill, repeat.</p><p>The <b>learning rate</b> controls step size — and it's the most temperamental dial in AI. Feel it yourself:</p>" },
+              { type: "interactive", widget: "gradientDescent" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 What you just felt</span>Small learning rate = safe but slow crawl. Big = fast but overshoots and bounces. Too big = explodes (error gets WORSE each step). Every AI engineer alive has burned hours on exactly this dial." },
+              { type: "quiz", q: "You set the learning rate too high. What happens to the error during training?", options: ["Converges faster, no downside", "Bounces past the minimum, may get worse each step", "Nothing changes", "The data gets deleted"], answer: 1, explain: "Giant steps overshoot the valley and can climb the other side — divergence. You saw the ball do it. Tuning learning rate = balancing speed vs stability." }
+            ]
+          },
+          {
+            id: "chM2-l3", title: "Why 'deep' learning is just chained derivatives", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>A neural network stacks layers: output of one feeds the next. To train it, you need <i>how does the error change if I nudge a weight 5 layers back?</i></p><p>The <b>chain rule</b> answers it: multiply the sensitivities along the path. Applied backwards through the network, it's called <b>backpropagation</b> — the algorithm behind every deep model, GPT included.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Perspective</span>ChatGPT's training = the same loop you just drove: compute error → chain-rule the gradients → step downhill → repeat. Just with ~10¹² knobs instead of 2. Same math, more GPUs." },
+              { type: "quiz", q: "Backpropagation is essentially…", options: ["A database technique", "The chain rule applied backwards to get every weight's gradient", "A way to store models", "Random search"], answer: 1, explain: "Backprop = chain rule + bookkeeping. It efficiently computes 'nudge sensitivity' for every weight so gradient descent can update them all." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "chM3", emoji: "🎲",
+        title: "Math 3 — Probability: the language of uncertainty",
+        summary: "Distributions, conditioning, and honest forecasts — a number ± how sure you are.",
+        lessons: [
+          {
+            id: "chM3-l1", title: "Distributions — the shape of your days", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>List all 137 daily revenues and count how often each range happens → that shape is a <b>distribution</b>. Its center = the <b>mean</b> (Rp 279k for your open days). Its width = the <b>variance/standard deviation</b> — how wild the swings are.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Two shops, same mean</span>Shop A: swings Rp 250–310k. Shop B: swings Rp 50–600k. Same average — utterly different businesses. The mean without the spread is HALF the story. (Reviewers reject papers that report means without spread!)" },
+              { type: "quiz", q: "Two forecasters both predict 'Rp 280k tomorrow'. Forecaster A's errors have small spread, B's are wild. Who do you trust?", options: ["Both equally — same prediction", "A — low spread means consistent reliability", "B — wild is exciting", "Neither"], answer: 1, explain: "The point prediction is identical; the DISTRIBUTION of errors is what tells you reliability. Uncertainty is information." }
+            ]
+          },
+          {
+            id: "chM3-l2", title: "Conditional probability — clues change odds", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p><b>P(busy day)</b> at your shop might be 30%. But <b>P(busy day | it's Saturday)</b> — the probability GIVEN a clue — jumps to 60%. That bar '|' means <i>given that I know…</i></p><p>This is the soul of prediction: <b>every feature is a clue that reshapes the odds.</b> Your day-of-week average forecaster is literally 'the expected revenue GIVEN the weekday'.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ The classic trap</span>P(wet street | rain) ≈ 100%, but P(rain | wet street) is lower (maybe someone washed a car). Flipping conditionals is the most common probability error in the world — Bayes' rule exists to flip them CORRECTLY." },
+              { type: "quiz", q: "Your dow-average forecaster ('expected revenue given it's Saturday') is an example of…", options: ["A conditional expectation — prediction given a clue", "A random guess", "Overfitting", "A matrix"], answer: 0, explain: "E[revenue | weekday] — expectation conditioned on a feature. Fancier models just condition on MORE clues at once." }
+            ]
+          },
+          {
+            id: "chM3-l3", title: "Honest forecasts: a number ± how sure", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Amateur forecast: 'tomorrow = Rp 257k.' Professional forecast: 'tomorrow = Rp 257k, <b>and 80% of the time it'll land between 180k–330k</b>.' That range is a <b>prediction interval</b> — the honest version of a forecast.</p><p>Your MAE (~Rp 98k) already tells you the typical miss — that's the raw material for intervals.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Remember your instinct?</span>In our very first math conversation you kept reaching for the word 'probability' when guessing tomorrow's sales. This lesson is that instinct, formalized: real forecasters ship a number AND its uncertainty. Put intervals in the riset paper — reviewers love it." },
+              { type: "quiz", q: "What makes 'Rp 257k ± (180k–330k, 80%)' better than just 'Rp 257k'?", options: ["It's longer", "It communicates uncertainty, so decisions can account for risk", "Big numbers impress people", "It hides errors"], answer: 1, explain: "A point + interval = honest forecasting. The owner can stock for the range, not a false single number. And it's publishable practice." }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
   /* ============ LEVEL 2 — INTERMEDIATE ============ */
   {
     id: "intermediate",
