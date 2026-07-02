@@ -344,21 +344,78 @@ const CURRICULUM = [
     emoji: "🚀",
     lockedUntil: "intermediate",
     chapters: [
-      { id: "ch6", emoji: "🌊", title: "Chapter 6 — Concept Drift", summary: "Detecting when reality changes and your model goes stale.", lessons: [
-        { id: "ch6-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 The novelty begins</span>When you add a new menu or Ramadan hits, your model's world shifts. Detecting that 'drift' is step one of self-improvement." }
-        ]}
-      ]},
-      { id: "ch7", emoji: "🔁", title: "Chapter 7 — The Automated Retraining Loop", summary: "Monitor → detect drift → retrain → validate → deploy. Itself.", lessons: [
-        { id: "ch7-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 The heart of the paper</span>This loop IS the 'self-improving' contribution (Stage 4). The system that gets better without you touching it." }
-        ]}
-      ]},
-      { id: "ch8", emoji: "🎓", title: "Chapter 8 — From Forecaster to Sinta 4 Paper", summary: "Turning the build into a publishable research paper.", lessons: [
-        { id: "ch8-l1", title: "Unlocks as we learn", minutes: 5, blocks: [
-          { type: "callout", variant: "tip", html: "<span class='lab'>🔒 The finish line</span>Structuring methodology, results, and writing — the path to skripsi exemption." }
-        ]}
-      ]}
+      {
+        id: "ch6", emoji: "🌊",
+        title: "Chapter 6 — Concept Drift",
+        summary: "Detecting when reality changes and your model goes stale. Taught with YOUR shop's real data.",
+        lessons: [
+          {
+            id: "ch6-l1", title: "When the world moves under your model", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>A model learns patterns from history. But reality keeps changing: a new menu, a competitor opening, Ramadan, a viral TikTok. When today's world no longer matches the world the model learned from, the model quietly goes wrong. That mismatch is <b>concept drift</b>.</p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ This happened to YOUR shop</span>In the real Cashlo data (Dec 2025–Jun 2026), the shop closed 10/10 days for Lebaran (mudik), then reopened into a <i>different</i> sales regime. A model trained before Lebaran was suddenly forecasting a world that no longer existed." },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Two flavors</span><b>Sudden drift</b> — an abrupt break (Lebaran closure, new competitor). <b>Gradual drift</b> — slow change (the shop growing month by month: Rp 1.1M in Dec → Rp 9.5M in April). Your data had BOTH." },
+              { type: "quiz", q: "Your model was accurate for months, then a competitor opened and error keeps climbing. What is this?", options: ["Overfitting", "Concept drift — reality changed", "A bug in the code", "Not enough features"], answer: 1, explain: "The model didn't change — the WORLD did. Patterns it learned no longer hold. That's concept drift, and no static model survives it forever." }
+            ]
+          },
+          {
+            id: "ch6-l2", title: "How a model watches itself", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>You can't see drift directly — but you can see its shadow: <b>the model's own error starts rising</b>. So a self-aware system tracks its recent errors and compares them to its normal level.</p><span class='formula'>if (recent 14-day error) &gt; 1.5 × (normal error) → DRIFT ALARM</span><p>That simple rule is a real drift detector. The research literature has fancier ones — <b>DDM</b>, <b>ADWIN</b>, Page-Hinkley — but they all share this soul: <i>watch the error, react when it jumps.</i></p>" },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ It worked on real data</span>Running exactly this monitor over the Cashlo history, it raised its hand on <b>31 March 2026</b> — right after the Lebaran closure, exactly when the sales regime shifted. The machine noticed the world changed before anyone told it." },
+              { type: "quiz", q: "How does a deployed model 'notice' concept drift?", options: ["It reads the news", "Its recent prediction error rises above its normal level", "It can't — impossible", "The database tells it"], answer: 1, explain: "Drift shows up as a sustained jump in the model's own error. Monitors like DDM/ADWIN formalize 'recent error >> normal error' — the same logic as our 1.5× rule." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "ch7", emoji: "🔁",
+        title: "Chapter 7 — The Self-Improving Loop",
+        summary: "Monitor → detect drift → retrain → validate. The riset's contribution, with the real numbers.",
+        lessons: [
+          {
+            id: "ch7-l1", title: "Static vs adaptive — the experiment", minutes: 8,
+            blocks: [
+              { type: "text", html: "<p>The core question of the riset: does a model that <b>keeps retraining</b> beat one trained <b>once and frozen</b>?</p><p>The experiment (on 137 real days of Cashlo sales): <b>STATIC</b> = train a day-of-week forecaster on the first 45 days, freeze it. <b>ADAPTIVE</b> = retrain on all data so far, every single day (an expanding window). Score both on the same 92 unseen days.</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 The real result</span>STATIC: MAE Rp 123,188. ADAPTIVE: MAE Rp 106,473 → the self-improving loop was <b>14% more accurate</b>. And month by month you can watch the static model rot: by May it was Rp 124k wrong per day while adaptive was Rp 95k." },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ Honest footnote</span>In June (a tiny partial month) the static model happened to win. Real research reports that too — one awkward month doesn't erase the trend, but hiding it would be dishonest." },
+              { type: "quiz", q: "Why did the ADAPTIVE forecaster beat the STATIC one on this data?", options: ["It used a fancier algorithm", "It kept learning as the shop grew and patterns shifted", "It had fewer features", "Luck"], answer: 1, explain: "Same algorithm! The only difference: adaptive retrains on new data, so it tracked the shop's growth and post-Lebaran shift. Freshness beat cleverness — 14% better MAE." }
+            ]
+          },
+          {
+            id: "ch7-l2", title: "Anatomy of the loop", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>The full self-improving loop has four organs:</p><p><b>1. MONITOR</b> — log every prediction vs reality.<br><b>2. DETECT</b> — drift alarm when recent error jumps (Ch6).<br><b>3. RETRAIN</b> — refit on data that includes the new reality.<br><b>4. VALIDATE</b> — only deploy the new model if it actually beats the old one on recent data (champion vs challenger).</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 Why step 4 matters</span>Blind retraining can make things WORSE (retrain during a weird week and you learn noise). The champion/challenger gate means the system can never downgrade itself — improvement is one-way." },
+              { type: "callout", variant: "story", html: "<span class='lab'>☕ Why this is the riset (not just 'a model')</span>Chapter 4–5 proved a hard truth: on small noisy data, fancy models often LOSE to simple baselines. So the contribution isn't a cleverer model — it's a SYSTEM that keeps whatever model honest and current. That reframe is what makes the paper defensible." },
+              { type: "quiz", q: "Before deploying a freshly retrained model, the loop should…", options: ["Deploy immediately — newer is better", "Validate it beats the current model on recent data first", "Delete the old model", "Wait a year"], answer: 1, explain: "Champion vs challenger: the new model must PROVE itself on held-out recent data before taking over. That gate is what makes self-improvement safe." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "ch8", emoji: "🎓",
+        title: "Chapter 8 — From Forecaster to Paper",
+        summary: "Turning the build into a publishable article — luaran rules, IMRaD, and honest evaluation.",
+        lessons: [
+          {
+            id: "ch8-l1", title: "What the campus actually requires", minutes: 6,
+            blocks: [
+              { type: "text", html: "<p>Know the rules you're playing by (UNESA MBKM riset pedoman):</p><p>The riset needs <b>ONE luaran wajib</b> — a <b>prototype/implementation</b> counts, and so does an article at <b>minimum Sinta 3–6 with just 'submitted/under review' status</b>. The LPPM student-research grant (up to Rp 5jt) has the same 'under review' bar.</p>" },
+              { type: "callout", variant: "tip", html: "<span class='lab'>⚠️ Don't confuse two bars</span>PASSING the riset = easy (the prototype already exists). <b>Skripsi exemption</b> = a separate prodi policy with a higher bar (likely Sinta 4, possibly published). Always confirm the exemption rule with your dosen — never assume.</span>" },
+              { type: "quiz", q: "To satisfy the riset BKP's luaran wajib, an article must be…", options: ["Published in Scopus Q1", "At minimum Sinta 3–6 with submitted/under-review status (or a prototype instead)", "Sinta 1 published", "There's no output requirement"], answer: 1, explain: "The pedoman accepts a prototype OR an article at min Sinta 3–6 where 'submit/under review' already counts. The Sinta-4-published bar belongs to the separate skripsi-exemption policy." }
+            ]
+          },
+          {
+            id: "ch8-l2", title: "IMRaD — the shape of every paper", minutes: 7,
+            blocks: [
+              { type: "text", html: "<p>Nearly every scientific paper has the same skeleton — <b>IMRaD</b>:</p><p><b>I</b>ntroduction (why this problem matters + the gap) → <b>M</b>ethod (what you did, reproducibly) → <b>R</b>esults (what happened — tables, numbers) → <b>D</b>iscussion (what it means + limitations).</p><p>Your riset already maps onto it: UMKM cash-flow problem (I), data + baselines + loop design (M), 14% improvement + drift detection (R), 'freshness beats cleverness on small data' + partial-June caveat (D).</p>" },
+              { type: "callout", variant: "key", html: "<span class='lab'>🔑 What reviewers reward</span>Honest baselines, a fair test the model can't cheat (walk-forward), reported limitations, and comparisons to established methods (cite DDM/ADWIN for drift). You already practice all four — that's why the honest failures in Stage 2 were worth more than fake wins." },
+              { type: "quiz", q: "In IMRaD, the honest sentence 'our June sample was too small to conclude' belongs in…", options: ["Introduction", "Method", "Results", "Discussion (limitations)"], answer: 3, explain: "Limitations live in the Discussion. Reviewers TRUST papers that state their own weaknesses — hiding them is the fastest way to rejection." }
+            ]
+          }
+        ]
+      }
     ]
   }
 ];

@@ -119,6 +119,7 @@ function renderHome() {
   const todayDone = Math.min(state.daily.lessons, goal);
   const pct = Math.round((todayDone / goal) * 100);
   const next = firstIncomplete();
+  const pool = collectPracticePool();
 
   let html = `
     <div class="hero">
@@ -135,6 +136,16 @@ function renderHome() {
         <div class="csum" style="min-height:0">${next.level.title} · ${next.chap.title}</div>
       </div>
       <span class="btn btn-primary" style="pointer-events:none;white-space:nowrap">Lanjut →</span>
+    </button>` : ""}
+    ${pool.length >= 3 ? `
+    <button class="chap" id="practiceCard" style="display:flex;align-items:center;gap:16px;width:100%;margin-bottom:18px;border-color:var(--gold)">
+      <div style="font-size:28px">🎲</div>
+      <div style="flex:1;min-width:0">
+        <div class="eyebrow" style="color:var(--gold)">Latihan Cepat · Active recall</div>
+        <div class="ctitle" style="margin:3px 0 2px">5 soal acak dari yang sudah kamu pelajari</div>
+        <div class="csum" style="min-height:0">+5 XP per jawaban benar · melatih ingatan jangka panjang</div>
+      </div>
+      <span class="btn btn-ghost" style="pointer-events:none;white-space:nowrap">Main →</span>
     </button>` : ""}
 
     <div class="habit">
@@ -197,6 +208,7 @@ function renderHome() {
   screens.home.querySelectorAll(".chap[data-chap]:not(.locked)").forEach(b =>
     b.addEventListener("click", () => openChapter(b.dataset.level, b.dataset.chap)));
   if (next) document.getElementById("resumeCard")?.addEventListener("click", () => openLesson(next.lesson.id));
+  document.getElementById("practiceCard")?.addEventListener("click", startPractice);
 
   renderTopbar();
 }
@@ -495,6 +507,87 @@ function initFitLine() {
   }
   mS.addEventListener("input", update); bS.addEventListener("input", update);
   update();
+}
+
+/* ---------- Latihan (practice / active recall) ---------- */
+function collectPracticePool() {
+  const pool = [];
+  for (const L of CURRICULUM) for (const c of L.chapters) for (const les of c.lessons) {
+    if (!state.completed.includes(les.id)) continue;
+    for (const b of les.blocks) if (b.type === "quiz")
+      pool.push({ q: b.q, options: b.options, answer: b.answer, explain: b.explain, from: c.title });
+  }
+  return pool;
+}
+let practiceCtx = null;
+function startPractice() {
+  const pool = collectPracticePool();
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  practiceCtx = { qs: pool.slice(0, 5), idx: 0, score: 0 };
+  renderPracticeStep();
+  show("lesson");
+}
+function renderPracticeStep() {
+  const { qs, idx, score } = practiceCtx;
+  if (idx >= qs.length) {
+    const great = score >= Math.ceil(qs.length * 0.8);
+    screens.lesson.innerHTML = `
+      <div class="lesson-top">
+        <button class="btn-back" id="prBack">← Home</button>
+        <div class="lesson-progress"><div style="width:100%"></div></div>
+        <div class="step-count">Selesai</div>
+      </div>
+      <div class="lesson-card" style="text-align:center">
+        <div style="font-size:54px">${great ? "🏆" : "💪"}</div>
+        <h2>Latihan selesai: ${score}/${qs.length}</h2>
+        <p class="block-text" style="color:var(--ink-soft)">${great ? "Luar biasa — ingatanmu tajam!" : "Bagus! Soal yang salah bakal muncul lagi lain kali — begitulah otak belajar (active recall)."}</p>
+        <button class="btn btn-primary" id="prDone" style="margin-top:18px">Kembali ke Home</button>
+      </div>`;
+    document.getElementById("prBack").addEventListener("click", goLearn);
+    document.getElementById("prDone").addEventListener("click", goLearn);
+    if (great) burstConfetti(60);
+    return;
+  }
+  const q = qs[idx];
+  const styles = ["red","blue","yellow","green"], shapes = ["▲","◆","●","■"];
+  screens.lesson.innerHTML = `
+    <div class="lesson-top">
+      <button class="btn-back" id="prBack">← Keluar</button>
+      <div class="lesson-progress"><div style="width:${Math.round(idx / qs.length * 100)}%"></div></div>
+      <div class="step-count">🎲 ${idx + 1}/${qs.length}</div>
+    </div>
+    <div class="lesson-card">
+      <div class="kicker">Latihan · dari: ${q.from}</div>
+      <div class="quiz">
+        <div class="q">${q.q}</div>
+        <div class="quiz-grid" id="prGrid">
+          ${q.options.map((opt, i) => `<button class="q-tile ${styles[i]}" data-i="${i}"><span class="shape">${shapes[i]}</span><span>${opt}</span></button>`).join("")}
+        </div>
+        <div class="quiz-feedback" id="prFb"></div>
+      </div>
+    </div>
+    <div class="lesson-nav">
+      <span></span>
+      <button class="btn btn-primary" id="prNext" disabled>Lanjut →</button>
+    </div>`;
+  document.getElementById("prBack").addEventListener("click", goLearn);
+  const tiles = [...document.querySelectorAll("#prGrid .q-tile")];
+  const fb = document.getElementById("prFb");
+  tiles.forEach(t => t.addEventListener("click", () => {
+    const pick = +t.dataset.i;
+    tiles.forEach(x => x.disabled = true);
+    if (pick === q.answer) {
+      t.classList.add("correct"); practiceCtx.score++;
+      state.xp += 5; save(); renderTopbar();
+      fb.className = "quiz-feedback ok show"; fb.innerHTML = `<b>✓ Benar! +5 XP.</b> ${q.explain}`;
+      burstConfetti(12);
+    } else {
+      t.classList.add("wrong"); tiles[q.answer].classList.add("reveal");
+      fb.className = "quiz-feedback no show"; fb.innerHTML = `<b>Belum tepat.</b> ${q.explain}`;
+    }
+    document.getElementById("prNext").disabled = false;
+  }));
+  document.getElementById("prNext").addEventListener("click", () => { practiceCtx.idx++; renderPracticeStep(); });
 }
 
 /* ---------- navigation ---------- */
